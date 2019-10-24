@@ -1,70 +1,148 @@
 # Spring Data JPA
-## Paginación y Ordenamiento
 
-Cuando se desarrolla un API Rest y se tiene una gran cantidad de datos para mostrar una cosa importante qué realizar es la paginación de esos datos, así el cliente (navegador web, app móvil) puede consumir esos datos en pequeñas cantidades. 
+When we develop a Rest API maybe we have a lot of information to show or share. An important consideration is how we can show 
+those data efficiently. A way to improve how we show data is paging those data, in this way the client (web explorer, mobile app)
+can consume those data in small parts.
 
-En esta entrada daremos un repaso a la paginación y ordenamiento de los datos utilizando [Spring Data JPA](https://spring.io/projects/spring-data).La misión de **Spring Data** es, acorde a su página:
+In this post I show how can we do paging and sorting data with one of the hottest technologies today 
+[Spring Data JPA](https://spring.io/projects/spring-data). The purpose of **Spring Data** according to his page is:
 
 *"provide a familiar and consistent, Spring-based programming model for data access while still retaining the special traits of the underlying data store.\
 It makes it easy to use data access technologies, relational and non-relational databases, map-reduce frameworks, and cloud-based data services. This is an umbrella project which contains many subprojects that are specific to a given database. The projects are developed by working together with many of the companies and developers that are behind these exciting technologies."*
 
-## Configuración
-Lo primero que debemos tener es una Entity que modele el dato que queremos mostrar.
+## Configuration
+First, we need to create an **Entity** to have a model of our data
 
 ``` java
-@Entity
+@Entity(name="heroe")
 public class Hero {
-    @Id
-    private long idHero;
 
-    private String heroName;
-    private String realName;
-    private List<String> superPowers;
+	@Id
+    @GeneratedValue(strategy=GenerationType.AUTO)
+	private Integer id;
+	
+	private String realName;
 
-    // Constructors, getters and setters
+	private String heroName;
+	
+	public Hero() {};
+	
+	public Hero(String realName, String heroName) {
+		this.realName = realName;
+		this.heroName = heroName;
+	}
+	
+	public String getRealName() {
+		return realName;
+	}
+	public void setRealName(String realName) {
+		this.realName = realName;
+	}
+	public String getHeroName() {
+		return heroName;
+	}
+	public void setHeroName(String heroName) {
+		this.heroName = heroName;
+	}
+	
+	
 }
 ```
 
-## Repositorio Spring Data
+## Spring Data Repository
 
-Para poder compartir los datos con el API Rest lo que necesitamos es crear un *HeroRepository*
+To be able to share the data, we need to recover the data first, so, we need to create a repository 
+(*HeroRepository*)
 
 ``` java
 public interface HeroRepo extends PagingAndSortingRepository<Hero, Long> {
 }
 ```
-
-Al haber extendido de [PagingAndSortingRepository](https://docs.spring.io/spring-data/data-commons/docs/current/api/org/springframework/data/repository/PagingAndSortingRepository.html)
-tenemos los siguientes métodos
+Having extended from [PagingAndSortingRepository](https://docs.spring.io/spring-data/data-commons/docs/current/api/org/springframework/data/repository/PagingAndSortingRepository.html)
+we have the following methods (without coding anything)
 
 ``` java
 List<Hero> findAll(Pageable pageable);
 List<Hero> findAll(Sort sort);
 ```
-practicamente sin haber programado algún tipo de lógica.
+## Paging and Sorting
+After having created our repository, which implement *PagingAndSortingRepository* interface, we can recover our data
+as follow
 
-## Paginación y Ordenación
-Una vez que tenemos nuestro repositorio, el cual implementó la interfaz *PagingAndSortingRepository* podemos mandar a llamar los datos de manera paginada
 ``` java
-Pageable pageable = PageRequest.of(0, 10);
+Pageable pageable = PageRequest.of(0, 20);
 Page<Hero> heroes = heroRepository.findAll(pageable);
 ```
-Como se ve, esta consulta devuelve un *Page\<T>*. Además de tener la lista de héroes, la instancia *Page\<T>* conoce el total de número de páginas disponibles.
 
-De manera similar, podemos hacer una ordenación de manera concisa
+First argument of **PageRequest** is the page number and the second is the size of the set. How we can see, 
+*heroRepository.findAll(pageable);* returns a *Page\<T>* instance. *Page\<T>* instance contains the 
+list of heroes and the total of avalaible pages.
+
+``` json
+{
+   "content":[
+      {
+         "realName":"Barbara Gordon",
+         "heroName":"Batgirl"
+      },
+      {
+         "realName":"Barry Allen",
+         "heroName":"Flash"
+      },
+      {
+         "realName":"Bruce Wayne",
+         "heroName":"Batman"
+      },
+      {
+         "realName":"Hal Jordan",
+         "heroName":"Green Lantern"
+      },
+      {
+         "realName":"Oliver Queen",
+         "heroName":"Green Arrow"
+      }
+   ],
+   "pageable":{
+      "sort":{
+         "sorted":true,
+         "unsorted":false,
+         "empty":false
+      },
+      "offset":0,
+      "pageNumber":0,
+      "pageSize":20,
+      "paged":true,
+      "unpaged":false
+   },
+   "last":true,
+   "totalElements":5,
+   "totalPages":1,
+   "size":20,
+   "number":0,
+   "sort":{
+      "sorted":true,
+      "unsorted":false,
+      "empty":false
+   },
+   "numberOfElements":5,
+   "first":true,
+   "empty":false
+}
+```
+
+In the same way, we can sort the data, as follow
 ``` java
 Page<Hero> heroes = heroRepository.findAll(Sort.by("heroName"));
 Page<Hero> heroes = heroRepository.findAll(Sort.by("heroName").ascending());
 Page<Hero> heroes = heroRepository.findAll(Sort.by("heroName").descending());
 ```
-De igual manera podemos combinar **Paginación** y **Ordenamiento**
-
+We can combine paging and sorting too.
 ``` java
 Pageable pageable = PageRequest.of(0, 10, Sort.by("heroName"));
 Page<Hero> heroes = heroRepository.findAll(pageable);
 ```
 
-## Paginación y Ordenación Personalizada
+## Custom Paging and Sorting
 
 Si bien **Spring Data** nos proporciona una buena cantidad de métodos para obetener los datos, algunas veces no es suficiente. Así que podemos crear las firmas de nuestros métodos dependiendo de qué datos queramos. Pr ejemplo, si quisiéramos obtener la lista de todos los super héroes con cierto nombre, tendríamos un método con la siguiente firma
 

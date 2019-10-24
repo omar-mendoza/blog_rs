@@ -66,7 +66,16 @@ Page<Hero> heroes = heroRepository.findAll(pageable);
 
 ## Paginación y Ordenación Personalizada
 
-Si bien **Spring Data** nos proporciona una buena cantidad de métodos para obetener los datos, algunas veces no es suficiente. Así que podemos crear las firmas de nuestros métodos dependiendo de qué datos queramos. Pr ejemplo, si quisiéramos obtener la lista de todos los super héroes con cierto nombre, tendríamos un método con la siguiente firma
+Si bien **Spring Data** nos proporciona una buena cantidad de métodos para obetener los datos, algunas veces no es suficiente. Así que podemos crear las firmas de nuestros métodos dependiendo de qué datos queramos. Pr ejemplo, si quisiéramos obtener la lista de todos los super héroes con cierto nombre, tendríamos un método con la siguiente firma en nuestro repositorio
+``` java
+public interface HeroRepository extends PagingAndSortingRepository<Hero, Integer> {
+
+	public Iterable<Hero> findAllByHeroName(String heroName);
+	public Iterable<Hero> findAllByHeroNameContaining(String heroName);
+	public Iterable<Hero> findAllByHeroNameContainingIgnoreCase(String heroName);
+
+}
+```
 
 ``` java
 List<Hero> heroes = heroRepository.findAllByRealName(String name, Pageable pageable);
@@ -93,13 +102,6 @@ List<Hero> heroes = heroRepository.findAllByRealNameContaining(String name);
 List<Hero> heroes = heroRepository.findAllByRealNameLike(String name);
 List<Hero> heroes = heroRepository.findAllByRealNameIgnoreCase(String name);
 ```
-
-Tambien se pueden combinar estas busquedas utilizando el *keyword* **And**
-
-``` java
-List<Hero> heroes = heroRepository.findAllByRealNameContainingAndIgnoreCase(String name);
-```
-
 De esta manera tenemos un conjunto de métodos muchas veces suficiente para poder recuperar los datos de la BD.
 
 # Conclusión
